@@ -1,0 +1,132 @@
+#!/usr/bin/env perl
+use REST::Client;
+use JSON;
+use Data::Dumper;
+use Encode;
+use HTML::Restrict;
+use utf8;
+no utf8;
+
+use Asterisk::AGI;
+
+$AGI = new Asterisk::AGI;
+
+my $client = REST::Client->new();
+($arg1,$arg2,$arg3,$arg4,$arg5,$arg6,$arg7,$arg8) = @ARGV;
+my $sessioncode = ($arg1);
+my $agent = ($arg2);
+my $cliente =($arg3);
+my $context =($arg4);
+my $code  = ($arg5);
+my $newDirAudioInteraction = ($arg6);
+my $project = ($arg7);
+my $recep = ($arg8);
+
+print "sessioncode : $sessioncode\n";
+print "agent : $agent\n";
+print "cliente : $cliente\n";
+print "context : $context\n";
+print "code : $code\n";
+print "newDirAudioInteraction : $newDirAudioInteraction\n";
+print "project : $project\n";
+
+if($context eq "{}")
+{
+}
+else 
+{
+$context =~ s/&&/\"/g;
+$context =~ s/fullkidney/,/g;
+$context =~ s/\$\$/ /g;
+}
+
+print "new context : $context\n";
+
+if($agent eq ""){
+$agent = "*mute*";
+}
+
+print "new agent : $agent\n";
+
+if(($cliente eq "") || ($context eq ""))
+{
+print "Usage: ./eva.agi <Sessão> <Texto> <Cliente> <Contexto> <code>";
+print "\n";
+$cliente = $arg3;
+}
+
+if($code eq "INIT"){
+   print "SET VARIABLE numatende \"$cliente\"";
+   print "\n";
+}
+
+
+#DEFAULT eva Connector
+
+my $instancia = "Eva Showroom";
+
+$client->addHeader('Accept', 'application/json');
+$client->addHeader('Content-Type','application/json'); 
+$client->addHeader('LOCALE', 'INSERT_LOCALE'); 
+$client->addHeader('USER-REF', 'INSERT_CHATDEMO');
+$client->addHeader('AUDIO-PATH', $newDirAudioInteraction);
+$client->addHeader('BUSINESS-KEY', 'INSERT_BUSINESSKEY');
+$client->addHeader('charset', 'INSERT_CHARSET');
+$client->addHeader('OS', 'INSERT_OS');
+$client->addHeader('BROWSER', 'INSERT_BROWSER');
+$client->addHeader('PROJECT','INSERT_PROJECT');
+$client->addHeader('CHANNEL','INSERT_CHANNEL');
+$client->addHeader('API-KEY','INSERT_APIKEY');
+
+$url = "INSERT_URL_CONVERSATION_BOT";
+
+print "RECEPCIONA: $recep\n";
+
+#CONFIGURE BOT WITH PHONE NUMBER
+if ($recep eq "INSERT_PHONE_NUMBER"){
+	
+	$instancia = "NAME_OF_INSTANCE";
+
+	$client->addHeader('PROJECT','INSERT_PROJECT');
+	$client->addHeader('CHANNEL','INSERT_CHANNEL');
+	$client->addHeader('API-KEY','INSERT_APIKEY');
+
+	$url = "INSERT_URL_CONVERSATION_BOT";
+}
+
+$hr = { text => $agent};
+my $req = encode_json $hr;
+if($sessioncode eq "") 
+{
+$req = "{\"code\":\"%EVA_WELCOME_MSG\",\"context\":$context}";
+}
+else
+{
+$req = "{\"text\":\"$agent\",\"context\":$context}";
+}
+
+print "url : $url\n";
+print "req : $req\n";
+print "context : $context\n";
+print "client : $client\n";
+
+print "INSTANCIA: $instancia\n";
+
+$client->POST($url, $req);
+my $result = $client -> responseContent();
+
+print "result : $result\n";
+
+my $decode = decode_json($result);
+my $test = $decode->{'answers'}[0];
+my $TecT = $test->{'technicalText'};
+my $Error = $decode->{'exceptionName'};
+
+my $answers = $decode->{'answers'};
+my $content = "";
+
+foreach my $item( @$answers ) { 
+
+		$content = $content . ' ' . encode('utf8', $item->{'content'}); 		
+		
+}
