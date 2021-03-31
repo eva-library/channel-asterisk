@@ -157,3 +157,5 @@ $ core show applications
 Thanks!
 
 **eva professional services**
+
+*Components are not supported
